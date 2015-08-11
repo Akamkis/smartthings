@@ -16,20 +16,14 @@
 */
 metadata {
 	// Automatically generated. Make future change here.
-	definition (name: “Zwave Thermostat Plus”, author: "justin@waymirenet.com") {
-    	capability "Relative Humidity Measurement"
+	definition (name: "Z-Wave thermostat Plus", author: "justin@waymirenet.com") {
+		capability "Relative Humidity Measurement"
+		capability "Battery"
 		capability "Temperature Measurement"
-		capability "Refresh"
 		capability "Thermostat"
-		capability "Configuration"
 		capability "Polling"
 
-		command "heatLevelUp"
-		command "heatLevelDown"
-		command "coolLevelUp"
-		command "coolLevelDown"
-		command "switchMode"
-		command "switchFanMode"
+		command "poll"
 	}
 
 	// simulator metadata
@@ -73,7 +67,7 @@ metadata {
 
 	tiles {
 		valueTile("temperature", "device.temperature", width: 2, height: 2) {
-			state("temperature", label:'${currentValue}°', unit:'F',
+			state("temperature", label:'${currentValue}°', unit:"F",
 				backgroundColors:[
 					[value: 31, color: "#153591"],
 					[value: 44, color: "#1e9cbb"],
@@ -85,23 +79,26 @@ metadata {
 				]
 			)
 		}
-        valueTile("humidity", "device.humidity", inactiveLabel: false, decoration: "flat") { 
-			state "humidity", label:'Humidity ${currentValue}%', backgroundColor:"#ffffff"
-		}
 		standardTile("mode", "device.thermostatMode", inactiveLabel: false, decoration: "flat") {
-			state "off", label:'', action:"switchMode", icon:"st.thermostat.heating-cooling-off"
-			state "heat", label:'', action:"switchMode", icon:"st.thermostat.heat"
-			state "emergencyHeat", label:'', action:"switchMode", icon:"st.thermostat.emergency-heat"
-			state "cool", label:'', action:"switchMode", icon:"st.thermostat.cool"
-			state "auto", label:'', action:"switchMode", icon:"st.thermostat.auto"
+			state "off", label:'${name}', action:"switchMode"
+			state "heat", label:'${name}', action:"switchMode"
+			state "emergencyHeat", label:'${name}', action:"switchMode"
+			state "cool", label:'${name}', action:"switchMode"
+			state "auto", label:'${name}', action:"switchMode"
 		}
 		standardTile("fanMode", "device.thermostatFanMode", inactiveLabel: false, decoration: "flat") {
-			state "fanAuto", label:'', action:"switchFanMode", icon:"st.thermostat.fan-auto"
-			state "fanOn", label:'', action:"switchFanMode", icon:"st.thermostat.fan-on"
-			state "fanCirculate", label:'  ', action:"switchFanMode", icon:"st.thermostat.fan-circulate"
+			state "fanAuto", label:'${name}', action:"switchFanMode"
+			state "fanOn", label:'${name}', action:"switchFanMode"
+			state "fanCirculate", label:'${name}', action:"switchFanMode"
+		}
+		controlTile("heatSliderControl", "device.heatingSetpoint", "slider", height: 1, width: 2, inactiveLabel: false) {
+			state "setHeatingSetpoint", action:"thermostat.setHeatingSetpoint", backgroundColor:"#d04e00"
 		}
 		valueTile("heatingSetpoint", "device.heatingSetpoint", inactiveLabel: false, decoration: "flat") {
 			state "heat", label:'${currentValue}° heat', unit:"F", backgroundColor:"#ffffff"
+		}
+		controlTile("coolSliderControl", "device.coolingSetpoint", "slider", height: 1, width: 2, inactiveLabel: false) {
+			state "setCoolingSetpoint", action:"thermostat.setCoolingSetpoint", backgroundColor: "#1e9cbb"
 		}
 		valueTile("coolingSetpoint", "device.coolingSetpoint", inactiveLabel: false, decoration: "flat") {
 			state "cool", label:'${currentValue}° cool', unit:"F", backgroundColor:"#ffffff"
@@ -110,69 +107,16 @@ metadata {
 			state "default", action:"polling.poll", icon:"st.secondary.refresh"
 		}
 		standardTile("configure", "device.configure", inactiveLabel: false, decoration: "flat") {
-			state "configure", label:'  ', action:"configuration.configure", icon:"st.secondary.configure"
+			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
 		}
-        standardTile("heatLevelUp", "device.heatingSetpoint", canChangeIcon: false, inactiveLabel: false, decoration: "flat") {
-                        state "heatLevelUp", label:'  ', action:"heatLevelUp", icon:"st.thermostat.thermostat-up"
-        }
-        standardTile("heatLevelDown", "device.heatingSetpoint", canChangeIcon: false, inactiveLabel: false, decoration: "flat") {
-                        state "heatLevelDown", label:'  ', action:"heatLevelDown", icon:"st.thermostat.thermostat-down"
-        }
-        standardTile("coolLevelUp", "device.heatingSetpoint", canChangeIcon: false, inactiveLabel: false, decoration: "flat") {
-                        state "coolLevelUp", label:'  ', action:"coolLevelUp", icon:"st.thermostat.thermostat-up"
-        }
-        standardTile("coolLevelDown", "device.heatingSetpoint", canChangeIcon: false, inactiveLabel: false, decoration: "flat") {
-                        state "coolLevelDown", label:'  ', action:"coolLevelDown", icon:"st.thermostat.thermostat-down"
-        }
-        
 		main "temperature"
-		details(["temperature", "mode", "fanMode", "heatLevelDown", "heatingSetpoint", "heatLevelUp", "coolLevelDown", "coolingSetpoint", "coolLevelUp", "humidity" , "refresh", "configure"])
+		details(["temperature", "mode", "fanMode", "heatSliderControl", "heatingSetpoint", "coolSliderControl", "coolingSetpoint", "refresh", "configure"])
 	}
-}
-
-def coolLevelUp(){
-    int nextLevel = device.currentValue("coolingSetpoint") + 1
-    
-    if( nextLevel > 99){
-    	nextLevel = 99
-    }
-    log.debug "Setting cool set point up to: ${nextLevel}"
-    setCoolingSetpoint(nextLevel)
-}
-
-def coolLevelDown(){
-    int nextLevel = device.currentValue("coolingSetpoint") - 1
-    
-    if( nextLevel < 50){
-    	nextLevel = 50
-    }
-    log.debug "Setting cool set point down to: ${nextLevel}"
-    setCoolingSetpoint(nextLevel)
-}
-
-def heatLevelUp(){
-    int nextLevel = device.currentValue("heatingSetpoint") + 1
-    
-    if( nextLevel > 90){
-    	nextLevel = 90
-    }
-    log.debug "Setting heat set point up to: ${nextLevel}"
-    setHeatingSetpoint(nextLevel)
-}
-
-def heatLevelDown(){
-    int nextLevel = device.currentValue("heatingSetpoint") - 1
-    
-    if( nextLevel < 40){
-    	nextLevel = 40
-    }
-    log.debug "Setting heat set point down to: ${nextLevel}"
-    setHeatingSetpoint(nextLevel)
 }
 
 def parse(String description)
 {
-	def map = createEvent(zwaveEvent(zwave.parse(description, [0x42:1, 0x43:2, 0x31: 3])))
+	def map = createEvent(zwaveEvent(zwave.parse(description, [0x42:1, 0x43:2, 0x31:3, 0x80:1])))
 	if (!map) {
 		return null
 	}
@@ -209,11 +153,24 @@ def parse(String description)
 	} else if (map.name == "thermostatFanMode" && map.isStateChange) {
 		updateState("lastTriedFanMode", map.value)
 	}
-	log.debug "Parse returned $result"
+	log.debug "ParseEx returned $result"
 	result
 }
 
 // Event Generation
+def zwaveEvent(physicalgraph.zwave.commands.batteryv1.BatteryReport cmd) {
+	def nowTime = new Date().time
+	state.lastBatteryGet = nowTime
+	def map = [ name: "battery", unit: "%" ]
+	if (cmd.batteryLevel == 0xFF || cmd.batteryLevel == 0) {
+		map.value = 1
+		map.descriptionText = "$device.displayName battery is low!"
+    } else {
+		map.value = cmd.batteryLevel
+	}
+	map
+}
+
 def zwaveEvent(physicalgraph.zwave.commands.thermostatsetpointv2.ThermostatSetpointReport cmd)
 {
 	def map = [:]
@@ -239,6 +196,7 @@ def zwaveEvent(physicalgraph.zwave.commands.thermostatsetpointv2.ThermostatSetpo
 
 def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv3.SensorMultilevelReport cmd)
 {
+	log.debug "SensorMultilevelReport ${cmd}"
 	def map = [:]
 	switch (cmd.sensorType) {
 		case 1:
@@ -370,13 +328,24 @@ def poll() {
 		zwave.thermostatModeV2.thermostatModeGet().format(),
 		zwave.thermostatFanModeV3.thermostatFanModeGet().format(),
 		zwave.thermostatOperatingStateV1.thermostatOperatingStateGet().format(),
+		getBattery(),
         setClock()
 	], 2300)
 }
 
+private getBattery() {	//once every 10 hours
+	def nowTime = new Date().time
+	def ageInMinutes = state.lastBatteryGet ? (nowTime - state.lastBatteryGet)/60000 : 600
+    log.debug "Battery report age: ${ageInMinutes} minutes"
+    if (ageInMinutes >= 600) {
+        log.debug "Fetching fresh battery value"
+		zwave.batteryV1.batteryGet().format()
+    } else "delay 87"
+}
+
 private setClock() {	//once a day
 	def nowTime = new Date().time
-	def ageInMinutes = state.lastClockSet ? (nowTime - state.lastClockSet)/60000 : 1440
+	def ageInMinutes = 1500//state.lastClockSet ? (nowTime - state.lastClockSet)/60000 : 1440
     log.debug "Clock set age: ${ageInMinutes} minutes"
     if (ageInMinutes >= 1440) {
         log.debug "Setting clock"
@@ -434,7 +403,6 @@ def switchMode() {
 			nextMode = next(nextMode)
 		}
 	}
-    log.debug "Switching to mode: ${nextMode}"
 	switchToMode(nextMode)
 }
 
